@@ -328,10 +328,9 @@ int wsrep_to_isolation_begin(THD *thd, const char *db_, const char *table_,
 void wsrep_to_isolation_end(THD *thd);
 
 bool wsrep_append_SR_keys(THD *thd);
-int wsrep_to_buf_helper(
-  THD* thd, const char *query, uint query_len, uchar** buf, size_t* buf_len);
-int wsrep_create_trigger_query(THD *thd, uchar** buf, size_t* buf_len);
-int wsrep_create_event_query(THD *thd, uchar** buf, size_t* buf_len);
+int wsrep_to_buf_helper(THD *thd, const char *query, uint query_len,
+                        wsrep::mutable_buffer &buffer);
+int wsrep_create_event_query(THD *thd, wsrep::mutable_buffer &buffer);
 
 void wsrep_init_sidno(const wsrep_uuid_t&);
 bool wsrep_node_is_donor();
@@ -358,6 +357,13 @@ bool wsrep_prepare_keys_for_isolation(THD*              thd,
                                       const TABLE_LIST* table_list,
                                       wsrep_key_arr_t*  ka);
 void wsrep_keys_free(wsrep_key_arr_t* key_arr);
+
+/**
+   Append a table level key for certification,
+   with given db and table, and for the given type.
+*/
+int wsrep_append_table_level_key(THD *thd, const char *db, const char *table,
+                                 enum wsrep::key::type type);
 
 extern void
 wsrep_handle_mdl_conflict(MDL_context *requestor_ctx,
