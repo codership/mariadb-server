@@ -129,15 +129,13 @@ static int apply_events(THD*                       thd,
   uint n_retries = 0;
 
   int ret= wsrep_apply_events(thd, rli, data.data(), data.size());
-  WSREP_INFO("wsrep_high_priority_service.cc::wsrep_apply_events() --> %u", ret);
 
   while (ret && n_retries < wsrep_applier_retry_count) {
-    /* retry applying events */
+    /* appling failed, retry applying events */
     thd->clear_error();
     thd->reset_for_next_command(true);
-    n_retries++;
     ret= wsrep_apply_events(thd, rli, data.data(), data.size());
-    WSREP_INFO("wsrep_high_priority_service.cc::retry = %u, wsrep_apply_events() --> %u", n_retries, ret);
+    n_retries++;
   }
 
   if (ret || wsrep_thd_has_ignored_error(thd))
