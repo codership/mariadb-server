@@ -3717,13 +3717,7 @@ row_ins_step(
 	trx = thr_get_trx(thr);
 
 	node = static_cast<ins_node_t*>(thr->run_node);
-#if 1
-	if (0 == strcmp("test/t1", node->table->name.m_name)
-	    || 0 == strcmp("test/t2", node->table->name.m_name)) {
-		ib::info() << "innodb_row_ins_step_enter: table = '" << node->table->name
-			   << "', trx->id = " << trx->id;
-	}
-#endif
+
 	ut_ad(que_node_get_type(node) == QUE_NODE_INSERT);
 
 	parent = que_node_get_parent(node);
@@ -3817,30 +3811,18 @@ do_insert:
 	/* DO THE CHECKS OF THE CONSISTENCY CONSTRAINTS HERE */
 
 	DBUG_EXECUTE_IF("innodb_insert_fail",
-			ib::info() << "Executing innodb_insert_fail debug code"
-			           << ": table = " << node->table->name.m_name;
 			{
 				if (0 == strcmp("test/t1", node->table->name.m_name)) {
-					ib::info() << "Executing innodb_insert_fail debug code inside if-clause";
 					err = DB_LOCK_WAIT_TIMEOUT;
 					DBUG_SET("-d,innodb_insert_fail");
 					goto error_handling;
 				} else if (0 == strcmp("test/t2", node->table->name.m_name)) {
-					ib::info() << "Executing innodb_insert_fail debug code inside elseif-clause";
 					err = DB_LOCK_WAIT_TIMEOUT;
 					goto error_handling;}});
 
 	err = row_ins(node, thr);
 
 error_handling:
-#if 1
-	if (0 == strcmp("test/t1", node->table->name.m_name)
-	    || 0 == strcmp("test/t2", node->table->name.m_name)
-	) {
-		ib::info() << "innodb_row_ins_step_enter: table = '" << node->table->name
-			   << ", err = " << err;
-	}
-#endif
 	trx->error_state = err;
 
 	if (err != DB_SUCCESS) {
