@@ -1,0 +1,41 @@
+#
+# Test retrying applying of a transaction
+#
+
+--source include/galera_cluster.inc
+
+#
+# Retrying succeeds after one retry event, no error is raised.
+#
+CREATE TABLE t1 (f1 INTEGER PRIMARY KEY DEFAULT 0, f2 char(12));
+
+--connection node_1
+START TRANSACTION;
+INSERT INTO t1 (f1, f2) VALUES (1, 'a'), (2, 'b');
+COMMIT;
+
+START TRANSACTION;
+INSERT INTO t1 (f1, f2) VALUES (3, 'c');
+
+--connection node_2
+SET GLOBAL wsrep_applier_retry_count = 2;
+SET GLOBAL debug_dbug = "+d,innodb_insert_fail:o,/dev/null";
+CALL mtr.add_suppression("WSREP: Event 3 Write_rows_v1 apply failed: 146, seqno 4");
+
+--connection node_1
+INSERT INTO t1 (f1, f2) VALUES (4, 'd');
+COMMIT;
+
+SELECT COUNT(*) AS expect_4 FROM t1;
+
+--connection node_2
+SELECT COUNT(*) AS expect_4 FROM t1;
+
+#
+# Cleanup
+#
+
+SET GLOBAL wsrep_applier_retry_count = 0;
+SET DEBUG_SYNC = 'RESET';
+SET GLOBAL debug_dbug = DEFAULT;
+DROP TABLE t1;
