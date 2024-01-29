@@ -127,16 +127,41 @@ static int apply_events(THD*                       thd,
                         wsrep::mutable_buffer&     err,
                         bool const                 include_msg)
 {
+  static const LEX_CSTRING savepoint= { STRING_WITH_LEN("wsrep_retry") };
   uint n_retries = 0;
+  bool savepoint_exists = false;
+  uint applier_retry_count = wsrep_applier_retry_count;
+
+  if (applier_retry_count > 0) {
+    /* create a savepoint in case we need to retry applying */
+    savepoint_exists = (FALSE == trans_savepoint(thd, savepoint));
+  }
 
   int ret= wsrep_apply_events(thd, rli, data.data(), data.size());
 
-  while (ret && n_retries < wsrep_applier_retry_count) {
-    /* appling failed, retry applying events */
+  while (ret && savepoint_exists && n_retries < applier_retry_count) {
+    /* applying failed, retry applying events */
+
+    /* rollback to savepoint without telling Wsrep-lib */
+    bool saved_wsrep_on = thd->variables.wsrep_on;
+    thd->variables.wsrep_on = false;
+    if (FALSE != trans_rollback_to_savepoint(thd, savepoint)) {
+      thd->variables.wsrep_on = saved_wsrep_on;
+      break;
+    }
+    thd->variables.wsrep_on = saved_wsrep_on;
+
+    /* reset THD object for retry */
     thd->clear_error();
     thd->reset_for_next_command(true);
+
+    /* retry applying events */
     ret= wsrep_apply_events(thd, rli, data.data(), data.size());
     n_retries++;
+  }
+
+  if (savepoint_exists) {
+    trans_release_savepoint(thd, savepoint);
   }
 
   if (ret || wsrep_thd_has_ignored_error(thd))

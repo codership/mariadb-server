@@ -6,18 +6,19 @@
 --source include/have_innodb.inc
 
 #
-# Slave retries applying of a transaction multiple times. All retry attempts fail,
-# and the applying will fail with the expected error.
+# Slave retries applying of a transaction multiple times. All retry
+# attempts fail, and the applying will fail with the expected error.
 #
 
 CREATE TABLE t2 (f1 INTEGER PRIMARY KEY DEFAULT 0, f2 char(12));
 
 --connection node_2
-SET GLOBAL wsrep_applier_retry_count = 2;
-SET GLOBAL debug_dbug = "+d,innodb_insert_fail:o,/dev/null";
-CALL mtr.add_suppression("WSREP: Event 3 Write_rows_v1 apply failed: 146");
+CALL mtr.add_suppression("WSREP: Event .* Write_rows_v1 apply failed:");
 CALL mtr.add_suppression("WSREP: Inconsistency detected");
 CALL mtr.add_suppression("WSREP: Failed to apply write set");
+
+SET GLOBAL wsrep_applier_retry_count = 2;
+SET GLOBAL debug_dbug = "+d,innodb_insert_fail:o,/dev/null";
 
 --connection node_1
 SLEEP 1; 
