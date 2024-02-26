@@ -5,7 +5,7 @@
 --source include/galera_cluster.inc
 
 #
-# Retrying succeeds after one retry event, no error is raised.
+# Case 1: Retrying succeeds after one retry event, no error is raised.
 #
 CREATE TABLE t1 (f1 INTEGER PRIMARY KEY DEFAULT 0, f2 char(12));
 CREATE TABLE t3 (f1 INTEGER PRIMARY KEY DEFAULT 0, f2 char(12));
@@ -16,7 +16,7 @@ INSERT INTO t3 (f1, f2) VALUES (1, 'a');
 --connection node_2
 SET GLOBAL wsrep_applier_retry_count = 2;
 SET GLOBAL debug_dbug = "+d,innodb_insert_fail:o,/dev/null";
-CALL mtr.add_suppression("WSREP: Event .* Write_rows_v1 apply failed:");
+CALL mtr.add_suppression("Event .* Write_rows.* apply failed");
 
 --connection node_1
 INSERT INTO t3 (f1, f2) VALUES (2, 'b');
@@ -34,11 +34,68 @@ SELECT COUNT(*) AS expect_5 FROM t1;
 SELECT COUNT(*) AS expect_3 FROM t3;
 
 #
-# Cleanup
+# Cleanup after Case 1.
 #
 
+--connection node_1
 SET GLOBAL wsrep_applier_retry_count = 0;
 SET DEBUG_SYNC = 'RESET';
 SET GLOBAL debug_dbug = DEFAULT;
 DROP TABLE t1;
 DROP TABLE t3;
+
+
+#
+# Case 1: Slave retries applying of a transaction multiple times. All
+# retry attempts fail, and the applying will fail with the expected
+# error.
+#
+
+CREATE TABLE t2 (f1 INTEGER PRIMARY KEY DEFAULT 0, f2 char(12));
+
+--connection node_2
+CALL mtr.add_suppression("Event .* Write_rows.* apply failed");
+CALL mtr.add_suppression("Inconsistency detected");
+CALL mtr.add_suppression("Failed to apply write set");
+
+SET GLOBAL wsrep_applier_retry_count = 2;
+SET GLOBAL debug_dbug = "+d,innodb_insert_fail:o,/dev/null";
+
+--connection node_1
+START TRANSACTION;
+INSERT INTO t2 (f1, f2) VALUES (1, 'a'), (2, 'b');
+COMMIT;
+
+# shutdown node 2
+--connection node_2
+--echo Shutting down server ...
+SET wsrep_on=OFF;
+--source include/shutdown_mysqld.inc
+--remove_file $MYSQLTEST_VARDIR/mysqld.2/data/grastate.dat
+--echo Restarting server ...
+--source include/start_mysqld.inc
+
+--connection node_1
+SET wsrep_sync_wait=0;
+--let $wait_condition = SELECT VARIABLE_VALUE = 2 FROM performance_schema.global_status WHERE VARIABLE_NAME = 'wsrep_cluster_size'
+--source include/wait_condition.inc
+show status like 'wsrep_cluster_size';
+
+--connection node_2
+CALL mtr.add_suppression("Event .* Write_rows.* apply failed");
+SET wsrep_sync_wait=0;
+--let $wait_condition = SELECT VARIABLE_VALUE = 2 FROM performance_schema.global_status WHERE VARIABLE_NAME = 'wsrep_cluster_size'
+--source include/wait_condition.inc
+show status like 'wsrep_cluster_size';
+
+SELECT COUNT(*) AS expect_2 FROM t2;
+
+#
+# Cleanup
+#
+
+--connection node_1
+SET GLOBAL wsrep_applier_retry_count = 0;
+SET DEBUG_SYNC = 'RESET';
+SET GLOBAL debug_dbug = DEFAULT;
+DROP TABLE t2;
