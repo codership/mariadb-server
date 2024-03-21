@@ -46,7 +46,7 @@ DROP TABLE t3;
 
 
 #
-# Case 1: Slave retries applying of a transaction multiple times. All
+# Case 2: Slave retries applying of a transaction multiple times. All
 # retry attempts fail, and the applying will fail with the expected
 # error.
 #
