@@ -1711,10 +1711,15 @@ int wsrep_to_buf_helper(
 #endif /* GTID_SUPPORT */
   if (wsrep_gtid_mode && thd->variables.gtid_seq_no)
   {
+    rpl_group_info* rgi = thd->slave_thread ? thd->rgi_slave : thd->wsrep_rgi;
+    const bool standalone =
+        rgi->gtid_ev_flags2 & Gtid_log_event::FL_STANDALONE;
+    const bool is_transactional =
+        rgi->gtid_ev_flags2 & Gtid_log_event::FL_TRANSACTIONAL;
     Gtid_log_event gtid_event(thd, thd->variables.gtid_seq_no,
                           thd->variables.gtid_domain_id,
-                          true, LOG_EVENT_SUPPRESS_USE_F,
-                          true, 0);
+                          standalone, LOG_EVENT_SUPPRESS_USE_F,
+                          is_transactional, 0);
     gtid_event.server_id= thd->variables.server_id;
     if (!gtid_event.is_valid()) ret= 0;
     ret= writer.write(&gtid_event);
@@ -1936,7 +1941,7 @@ static bool wsrep_can_run_in_toi(THD *thd, const char *db, const char *table,
       If mariadb master has replicated a CTAS, we should not replicate the create table
       part separately as TOI, but to replicate both create table and following inserts
       as one write set.
-      Howver, if CTAS creates empty table, we should replicate the create table alone
+      However, if CTAS creates empty table, we should replicate the create table alone
       as TOI. We have to do relay log event lookup to see if row events follow the
       create table event.
     */
@@ -1948,6 +1953,7 @@ static bool wsrep_can_run_in_toi(THD *thd, const char *db, const char *table,
       switch (ev_type)
       {
       case QUERY_EVENT:
+      case XID_EVENT:
         /* CTAS with empty table, we replicate create table as TOI */
         break;
 
