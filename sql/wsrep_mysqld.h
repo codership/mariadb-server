@@ -93,6 +93,9 @@ extern uint32      wsrep_gtid_domain_id;
 extern std::atomic <bool > wsrep_thread_create_failed;
 extern ulonglong   wsrep_mode;
 extern uint        wsrep_applier_retry_count;
+#if defined(ENABLED_DEBUG_SYNC)
+extern char* wsrep_innodb_insert_fail_table;
+#endif /* ENABLED_DEBUG_SYNC */
 
 enum enum_wsrep_reject_types {
   WSREP_REJECT_NONE,    /* nothing rejected */

@@ -3795,16 +3795,16 @@ same_trx:
 do_insert:
 	/* DO THE CHECKS OF THE CONSISTENCY CONSTRAINTS HERE */
 
+#if defined(ENABLED_DEBUG_SYNC) && defined(WITH_WSREP)
 	DBUG_EXECUTE_IF("innodb_insert_fail",
 			{
-				if (0 == strcmp("test/t1", node->table->name.m_name)) {
+				extern char* wsrep_innodb_insert_fail_table;
+				if (0 == strcmp(wsrep_innodb_insert_fail_table,
+						node->table->name.m_name)) {
 					err = DB_LOCK_WAIT_TIMEOUT;
 					DBUG_SET("-d,innodb_insert_fail");
-					goto error_handling;
-				} else if (0 == strcmp("test/t2", node->table->name.m_name)) {
-					err = DB_LOCK_WAIT_TIMEOUT;
 					goto error_handling;}});
-
+#endif /* ENABLED_DEBUG_SYNC && WITH_WSREP */
 	err = row_ins(node, thr);
 
 error_handling:

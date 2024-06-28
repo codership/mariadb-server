@@ -4504,7 +4504,6 @@ static Sys_var_debug_sync Sys_debug_sync(
        NO_SET_STMT sys_var::ONLY_SESSION, NO_CMD_LINE,
        DEFAULT(0), NO_MUTEX_GUARD, NOT_IN_BINLOG, ON_CHECK(check_has_super));
 #endif /* defined(ENABLED_DEBUG_SYNC) */
-
 static bool fix_autocommit(sys_var *self, THD *thd, enum_var_type type)
 {
   if (type == OPT_GLOBAL)
@@ -6395,6 +6394,14 @@ static Sys_var_uint Sys_wsrep_applier_retry_count (
        GLOBAL_VAR(wsrep_applier_retry_count), CMD_LINE(OPT_ARG),
        VALID_RANGE(0, UINT_MAX), DEFAULT(0), BLOCK_SIZE(1),
        NO_MUTEX_GUARD, NOT_IN_BINLOG);
+
+#if defined(ENABLED_DEBUG_SYNC)
+static Sys_var_charptr Sys_wsrep_innodb_insert_fail_table(
+       "wsrep_innodb_insert_fail_table", "",
+       GLOBAL_VAR(wsrep_innodb_insert_fail_table),
+       CMD_LINE(REQUIRED_ARG),
+       DEFAULT(""));
+#endif /* defined(ENABLED_DEBUG_SYNC) */
 
 #endif /* WITH_WSREP */
 
