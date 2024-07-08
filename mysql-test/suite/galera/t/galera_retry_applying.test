@@ -15,7 +15,6 @@ INSERT INTO t3 (f1, f2) VALUES (1, 'a');
 
 --connection node_2
 SET GLOBAL wsrep_applier_retry_count = 2;
-SET GLOBAL wsrep_innodb_insert_fail_table = "test/t1";
 SET GLOBAL debug_dbug = "+d,innodb_insert_fail:o,/dev/null";
 CALL mtr.add_suppression("Event .* Write_rows.* apply failed");
 
@@ -60,7 +59,6 @@ CALL mtr.add_suppression("Inconsistency detected");
 CALL mtr.add_suppression("Failed to apply write set");
 
 SET GLOBAL wsrep_applier_retry_count = 2;
-SET GLOBAL wsrep_innodb_insert_fail_table = "test/t1";
 SET GLOBAL debug_dbug = "+d,innodb_insert_fail:o,/dev/null";
 
 --connection node_1

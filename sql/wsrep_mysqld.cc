@@ -85,9 +85,6 @@ const char *wsrep_dbug_option;
 const char *wsrep_notify_cmd;
 const char *wsrep_status_file;
 const char *wsrep_allowlist;
-#if defined(ENABLED_DEBUG_SYNC)
-char *wsrep_innodb_insert_fail_table;
-#endif /* ENABLED_DEBUG_SYNC */
 
 ulong   wsrep_debug;                            // Debug level logging
 my_bool wsrep_convert_LOCK_to_trx;              // Convert locking sessions to trx
