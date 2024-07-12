@@ -142,13 +142,10 @@ static int apply_events(THD*                       thd,
     /* applying failed, retry applying events */
 
     /* rollback to savepoint without telling Wsrep-lib */
-    bool saved_wsrep_on = thd->variables.wsrep_on;
     thd->variables.wsrep_on = false;
     if (FALSE != trans_rollback_to_savepoint(thd, savepoint)) {
-      thd->variables.wsrep_on = saved_wsrep_on;
       break;
     }
-    thd->variables.wsrep_on = saved_wsrep_on;
 
     /* reset THD object for retry */
     thd->clear_error();
