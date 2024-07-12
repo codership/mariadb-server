@@ -3810,11 +3810,18 @@ same_trx:
 do_insert:
 	/* DO THE CHECKS OF THE CONSISTENCY CONSTRAINTS HERE */
 
-	DBUG_EXECUTE_IF("innodb_insert_fail",
+	DBUG_EXECUTE_IF("innodb_insert_fail_once",
 			{
-				if (0 == strcmp("test/t1", node->table->name.m_name)) {
+				if (0 == strncmp("test/",
+						 node->table->name.m_name, 5)) {
 					err = DB_LOCK_WAIT_TIMEOUT;
-					DBUG_SET("-d,innodb_insert_fail");
+					DBUG_SET("-d,innodb_insert_fail_once");
+					goto error_handling;}});
+	DBUG_EXECUTE_IF("innodb_insert_fail_always",
+			{
+				if (0 == strncmp("test/",
+						 node->table->name.m_name, 5)) {
+					err = DB_LOCK_WAIT_TIMEOUT;
 					goto error_handling;}});
 
 	err = row_ins(node, thr);
