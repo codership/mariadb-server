@@ -17,6 +17,7 @@ INSERT INTO t3 (f1, f2) VALUES (2, 'b');
 INSERT INTO t3 (f1, f2) VALUES (3, 'c'), (4, 'd'), (5, 'e');
 COMMIT;
 
+# wait till the insert transaction has been replicated and committed in node_2
 --connection node_2
 --let $wait_condition = SELECT COUNT(*) > 0 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 't3';
 --source include/wait_condition.inc
@@ -37,6 +38,7 @@ UPDATE t3 SET f2 = 'dx' WHERE f1 = 4;
 DELETE FROM t3 WHERE f1 = 5;
 COMMIT;
 
+# wait till the transaction has been replicated and committed in node_2
 --connection node_2
 --let $wait_condition = SELECT COUNT(*) = 4 FROM t3;
 --source include/wait_condition.inc
@@ -106,6 +108,7 @@ COMMIT;
 --echo Shutting down server ...
 SET wsrep_on=OFF;
 --source include/shutdown_mysqld.inc
+--source include/wait_until_disconnected.inc
 --remove_file $MYSQLTEST_VARDIR/mysqld.2/data/grastate.dat
 --echo Restarting server ...
 --source include/start_mysqld.inc
