@@ -132,12 +132,17 @@ static int apply_events(THD*                       thd,
   bool savepoint_exists = false;
   uint applier_retry_count = wsrep_applier_retry_count;
 
-  if (applier_retry_count > 0) {
+  if (applier_retry_count > 0 && !thd->wsrep_trx().is_streaming()) {
     /* create a savepoint in case we need to retry applying */
     savepoint_exists = (FALSE == trans_savepoint(thd, savepoint));
   }
 
   int ret= wsrep_apply_events(thd, rli, data.data(), data.size());
+
+  if (savepoint_exists) {
+    /* check that the savepoint still exists after apply */
+    savepoint_exists = trans_savepoint_exists(thd, savepoint);
+  }
 
   while (ret && savepoint_exists && n_retries < applier_retry_count) {
     /* applying failed, retry applying events */
@@ -157,8 +162,14 @@ static int apply_events(THD*                       thd,
     /* retry applying events */
     ret= wsrep_apply_events(thd, rli, data.data(), data.size());
     n_retries++;
+    /* check that the savepoint still exists after apply */
+    savepoint_exists = trans_savepoint_exists(thd, savepoint);
   }
 
+  if (savepoint_exists) {
+    /* check that the savepoint still exists after apply */
+    savepoint_exists = trans_savepoint_exists(thd, savepoint);
+  }
   if (savepoint_exists) {
     trans_release_savepoint(thd, savepoint);
   }
