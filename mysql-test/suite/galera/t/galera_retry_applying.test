@@ -25,7 +25,7 @@ COMMIT;
 --source include/wait_condition.inc
 
 SET GLOBAL wsrep_applier_retry_count = 2;
-SET GLOBAL debug_dbug = "d,innodb_insert_fail_once:o,/dev/null";
+SET GLOBAL debug_dbug = "d,apply_event_fail_once:o,/dev/null";
 CALL mtr.add_suppression("Event .* Write_rows.* apply failed");
 
 --connection node_1
@@ -86,13 +86,13 @@ SET wsrep_sync_wait=0;
 CREATE TABLE t2 (f1 INTEGER PRIMARY KEY DEFAULT 0, f2 char(12));
 
 --connection node_2
-CALL mtr.add_suppression("Event .* Write_rows.* apply failed");
+CALL mtr.add_suppression("Event .* Update_rows.* apply failed");
 CALL mtr.add_suppression("Inconsistency detected");
 CALL mtr.add_suppression("Failed to apply write set:.*");
 
 SET GLOBAL wsrep_applier_retry_count = 2;
 SET GLOBAL debug_dbug = '';
-SET GLOBAL debug_dbug = "d,innodb_insert_fail_always:o,/dev/null";
+SET GLOBAL debug_dbug = "d,apply_event_fail_always:o,/dev/null";
 
 --connection node_1
 START TRANSACTION;
