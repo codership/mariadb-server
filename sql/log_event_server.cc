@@ -4915,7 +4915,41 @@ int Rows_log_event::do_apply_event(rpl_group_info *rgi)
       /* remove trigger's tables */
       goto err;
     }
-
+#ifdef WITH_WSREP
+    DBUG_EXECUTE_IF("apply_event_fail_once", {
+        if (WSREP(thd)) {
+          TABLE_LIST *table_list_ptr= rgi->tables_to_lock;
+          for (uint i=0 ;  table_list_ptr && (i < rgi->tables_to_lock_count);
+               table_list_ptr= table_list_ptr->next_global, i++) {
+            RPL_TABLE_LIST *ptr= static_cast<RPL_TABLE_LIST*>(table_list_ptr);
+            WSREP_INFO("DEBUG: %s: executing row event: %s.%s", __FUNCTION__,
+                       ptr->table->s->db.str, ptr->table->s->table_name.str);
+            if (0 == strcmp("test", ptr->table->s->db.str)) {
+              error= HA_ERR_LOCK_WAIT_TIMEOUT;
+              thd->is_slave_error= 1;
+              DBUG_SET("-d,apply_event_fail_once");
+              goto err;
+            }
+          }
+        }
+      };);
+    DBUG_EXECUTE_IF("apply_event_fail_always", {
+        if (WSREP(thd)) {
+          TABLE_LIST *table_list_ptr= rgi->tables_to_lock;
+          for (uint i=0 ; table_list_ptr && (i < rgi->tables_to_lock_count);
+               table_list_ptr= table_list_ptr->next_global, i++) {
+            RPL_TABLE_LIST *ptr= static_cast<RPL_TABLE_LIST*>(table_list_ptr);
+            WSREP_INFO("DEBUG: %s: executing row event: %s.%s", __FUNCTION__,
+                       ptr->table->s->db.str, ptr->table->s->table_name.str);
+            if (0 == strcmp("test", ptr->table->s->db.str)) {
+              error= HA_ERR_LOCK_WAIT_TIMEOUT;
+              thd->is_slave_error= 1;
+              goto err;
+            }
+          }
+        }
+      };);
+#endif /* WITH_WSREP */
     /*
       When the open and locking succeeded, we check all tables to
       ensure that they still have the correct type.
