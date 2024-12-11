@@ -1,4 +1,4 @@
-/* Copyright (C) 2015-2023 Codership Oy <info@codership.com>
+/* Copyright (C) 2015-2024 Codership Oy <info@codership.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
 
 #include "mysqld.h"
 #include "wsrep_mysqld.h"
-
+#include "log_event.h" // Gtid_log_event
 /*
   Forward decls
 */
@@ -132,6 +132,16 @@ class Wsrep_schema
      @return Zero on success, non-zero on failure.
   */
   int recover_sr_transactions(THD* orig_thd);
+
+  /**
+     Store GTID-event to mysql.gtid_slave_pos table.
+
+     @param orig_thd The THD object of the calling thread.
+     @param gtid GTID event from binlog.
+
+     @return Zero on success, non-zero on failure.
+  */
+  int store_gtid_event(THD* orig_thd, Gtid_log_event *gtid);
 
  private:
   /* Non-copyable */

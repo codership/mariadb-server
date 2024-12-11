@@ -22,8 +22,10 @@
 #include "wsrep_xid.h"
 #include "wsrep_thd.h"
 #include "wsrep_trans_observer.h"
+#include "wsrep_schema.h" // wsrep_schema
 
 #include "slave.h" // opt_log_slave_updates
+#include "rpl_gtid.h" // gtid
 #include "debug_sync.h"
 
 /*
@@ -127,6 +129,8 @@ void wsrep_store_error(const THD* const thd,
               dst.size(), dst.size() ? dst.data() : "(null)");
 }
 
+extern Wsrep_schema *wsrep_schema;
+
 int wsrep_apply_events(THD*        thd,
                        Relay_log_info* rli,
                        const void* events_buf,
@@ -179,6 +183,14 @@ int wsrep_apply_events(THD*        thd,
         else
         {
           thd->variables.gtid_seq_no= gtid_ev->seq_no;
+        }
+
+        if (wsrep_gtid_mode)
+        {
+          WSREP_DEBUG("::JAN::GTID_EVENT %llu:%llu:%llu", gtid_ev->domain_id,
+                      gtid_ev->server_id, gtid_ev->seq_no);
+          wsrep_schema->store_gtid_event(thd, gtid_ev);
+          slave_background_gtid_pending_delete_request();
         }
         delete ev;
       }
