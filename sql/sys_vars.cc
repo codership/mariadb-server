@@ -4542,6 +4542,14 @@ static bool fix_sql_log_bin_after_update(sys_var *self, THD *thd,
   DBUG_ASSERT(type == OPT_SESSION);
 
   thd->set_binlog_bit();
+#ifdef WITH_WSREP
+  if (WSREP(thd) && opt_bin_log)
+  {
+    // Enable binlog emulation if session disabled
+    // binlog, and viceversa.
+    wsrep_emulate_bin_log= !thd->variables.sql_log_bin;
+  }
+#endif /* WITH_WSREP */
 
   return FALSE;
 }
