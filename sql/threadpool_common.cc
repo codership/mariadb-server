@@ -250,7 +250,6 @@ static THD* threadpool_add_connection(CONNECT *connect, void *scheduler_data)
   delete connect; // must be after server_threads.insert, see close_connections()
   thd->set_mysys_var(mysys_var);
 
-
   /* Login. */
   thread_attach(thd);
   re_init_net_server_extension(thd);

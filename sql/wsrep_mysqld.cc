@@ -2857,8 +2857,6 @@ static inline bool is_committing_connection(THD *thd)
 
 static my_bool have_client_connections(THD *thd, void*)
 {
-  DBUG_PRINT("quit",("Informing thread %lld that it's time to die",
-                     (longlong) thd->thread_id));
   if (is_client_connection(thd))
   {
     if (thd->killed == KILL_CONNECTION ||
@@ -2912,13 +2910,17 @@ static my_bool kill_all_threads(THD *thd, THD *caller_thd)
   /* We skip slave threads & scheduler on this first loop through. */
   if (is_client_connection(thd) && thd != caller_thd)
   {
-    if (thd->get_stmt_da()->is_eof())
+    /* the connection executing SHUTDOWN, should do clean exit, not aborting here */
+    if (thd->get_command() == COM_SHUTDOWN)
     {
+      WSREP_DEBUG("leaving SHUTDOWN executing connection alive, thread: %lld",
+                 (longlong) thd->thread_id);
       return 0;
     }
-
+    /* replaying must be completed, not aborting here */
     if (is_replaying_connection(thd))
     {
+      WSREP_DEBUG("closing connection is replaying %lld", (longlong) thd->thread_id);
       thd->set_killed(KILL_CONNECTION_HARD);
       return 0;
     }
@@ -2968,8 +2970,10 @@ void wsrep_close_client_connections(my_bool wait_to_end, THD* except_caller_thd)
   */
   server_threads.iterate(kill_remaining_threads, except_caller_thd);
 
-  DBUG_PRINT("quit", ("Waiting for threads to die (count=%u)", THD_count::value()));
-  WSREP_DEBUG("waiting for client connections to close: %u", THD_count::value());
+  DBUG_PRINT("quit", ("Waiting for threads to die (count=%u)",
+                      THD_count::value()));
+  WSREP_DEBUG("waiting for client connections to close: %u",
+              THD_count::value());
 
   while (wait_to_end && server_threads.iterate(have_client_connections))
   {
