@@ -10091,7 +10091,12 @@ static void print_buffer_to_file(enum loglevel level, const char *buffer,
   }
 
 #ifdef WITH_WSREP
-  if (level < DEBUG_LEVEL || (wsrep_debug_mode & WSREP_DEBUG_MODE_DEBUG))
+  // Use normal logging if log level is not DEBUG OR
+  // if user requested DEBUG level logging and buffered
+  // error log is not on.
+  if (level < DEBUG_LEVEL ||
+      ((wsrep_debug_mode & WSREP_DEBUG_MODE_DEBUG) &&
+       !(wsrep_debug_mode & WSREP_DEBUG_MODE_BUFFERED)))
   {
 #endif
     fprintf(stderr, "%s", buf);
@@ -10099,7 +10104,13 @@ static void print_buffer_to_file(enum loglevel level, const char *buffer,
 #ifdef WITH_WSREP
   }
 
-  if (wsrep_debug_mode & WSREP_DEBUG_MODE_BUFFERED)
+  // Use buffred logging if log level is not DEBUG AND
+  // buffered logging is requested OR
+  // if user requested DEBUG level logging and buffered
+  // error log on.
+  if ((level < DEBUG_LEVEL && (wsrep_debug_mode & WSREP_DEBUG_MODE_BUFFERED)) ||
+      ((wsrep_debug_mode & WSREP_DEBUG_MODE_DEBUG) &&
+       (wsrep_debug_mode & WSREP_DEBUG_MODE_BUFFERED)))
     wsrep_buffered_error_log.log(buf, len);
 
   if (level <= WARNING_LEVEL)
