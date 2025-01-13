@@ -2343,13 +2343,15 @@ int ha_rollback_trans(THD *thd, bool all)
       transaction_participant *ht= ha_info->ht();
       if ((err= ht->rollback(thd, all)))
       {
-        // cannot happen
         my_error(ER_ERROR_DURING_ROLLBACK, MYF(0), err);
         error=1;
 #ifdef WITH_WSREP
 	if (WSREP(thd))
-          WSREP_WARN("handlerton rollback failed, thd %lld %lld conf %d SQL %s",
+          WSREP_WARN("ht->rollback() failed, thd %lld %lld conf %d "
+                     " err=%s wsrep=%s SQL %s",
                      thd->thread_id, thd->query_id, thd->wsrep_trx().state(),
+		     strerror(err),
+		     wsrep::to_c_string(thd->wsrep_cs().current_error()),
                      wsrep_thd_query(thd));
 #endif /* WITH_WSREP */
       }

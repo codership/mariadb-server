@@ -326,7 +326,7 @@ int logger_resize_buffer(LOGGER_HANDLE *log, unsigned long long buffer_limit)
 {
   if (log->data.get() != nullptr && buffer_limit == log->data->capacity())
     return 0;
-   
+
   flogger_mutex_lock(&log->lock);
   // Write out what we have currently, that way we don't have
   // to deal with old data in the buffer
@@ -341,7 +341,7 @@ int logger_resize_buffer(LOGGER_HANDLE *log, unsigned long long buffer_limit)
   {
     log->resize_buffer();
   }
-  
+
   flogger_mutex_unlock(&log->lock);
   return 0;
 }
