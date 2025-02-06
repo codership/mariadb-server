@@ -304,6 +304,13 @@ enum wsrep::provider::status Wsrep_client_service::replay()
     replayer_service.replay_status(ret);
   }
 
+  // Original thd binlog stmt cache could contain
+  // changes on non-transactional objects like sequences
+  // In Galera we allow only InnoDB sequences, thus
+  // sequence table updates are in writeset.
+  // Binlog cache needs reset so that binlog_close
+  binlog_reset_cache(m_thd);
+
   replayer_thd->main_security_ctx = old_ctx;
   delete replayer_thd;
   DBUG_RETURN(ret);
