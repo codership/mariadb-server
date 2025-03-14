@@ -11903,7 +11903,9 @@ public:
   void process_gtid(int round, Gtid_log_event *gev, LOG_INFO *linfo);
 
 #ifdef WITH_WSREP
-  void process_wsrep(xid_recovery_member *member, const Xid_log_event *xid_ev);
+  /* Process Xid_log_event to record wsrep meta data. Return zero on success,
+     non-zero on error. */
+  int process_wsrep(xid_recovery_member *member, const Xid_log_event *xid_ev, MEM_ROOT *);
 #endif /* WITH_WSREP */
 
   /*
@@ -12271,18 +12273,25 @@ void Recovery_context::process_gtid(int round, Gtid_log_event *gev,
 }
 
 #ifdef WITH_WSREP
-void Recovery_context::process_wsrep(xid_recovery_member *member,
-                                     const Xid_log_event *xid_ev)
+int Recovery_context::process_wsrep(xid_recovery_member *member,
+                                     const Xid_log_event *xid_ev,
+                                     MEM_ROOT *mem_root)
 {
   if (member && xid_ev->wsrep_seqno != Xid_log_event::wsrep_seqno_undefined)
   {
-    wsrep_xid_init(&member->wsrep_xid,
+    member->wsrep_xid= (XID*) alloc_root(mem_root, sizeof(XID));
+    if (!member->wsrep_xid)
+    {
+      return 1;
+    }
+    wsrep_xid_init(member->wsrep_xid,
                    {wsrep::id{xid_ev->wsrep_uuid, sizeof(xid_ev->wsrep_uuid)},
                     wsrep::seqno{xid_ev->wsrep_seqno}},
                    {last_wsrep_gtid_domain_id,
                       last_wsrep_gtid_server_id,
                       last_wsrep_gtid_seq_no});
   }
+  return 0;
 }
 #endif /* WITH_WSREP */
 
@@ -12447,7 +12456,8 @@ int TC_LOG_BINLOG::recover(LOG_INFO *linfo, const char *last_log_name,
         if (ctx.decide_or_assess(member, round, fdle, linfo, end_pos))
           goto err2;
 #ifdef WITH_WSREP
-        ctx.process_wsrep(member, xid_ev);
+        if (ctx.process_wsrep(member, xid_ev, &mem_root))
+          goto err2;
 #endif /* WITH_WSREP */
 #endif
       }
