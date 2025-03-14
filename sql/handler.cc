@@ -2685,17 +2685,9 @@ static void xarecover_do_commit_or_rollback(transaction_participant *hton,
   if (xarecover_decide_to_commit(member, ptr_commit_max))
   {
 #ifdef WITH_WSREP
-    XID wsrep_commit_xid;
-    if (!member->wsrep_seqno.is_undefined())
+    if (wsrep_is_wsrep_xid(&member->wsrep_xid))
     {
-      wsrep::gtid wsrep_gtid{
-          member->wsrep_uuid,
-          member->wsrep_seqno};
-      wsrep_server_gtid_t server_gtid{member->wsrep_gtid_domain_id,
-                                      member->wsrep_gtid_server_id,
-                                      member->wsrep_gtid_seq_no};
-      wsrep_xid_init(&wsrep_commit_xid, wsrep_gtid, server_gtid);
-      wsrep_recovery_commit_xid= &wsrep_commit_xid;
+      wsrep_recovery_commit_xid= &member->wsrep_xid;
     }
 #endif /* WITH_WSREP */
     rc= hton->commit_by_xid(&x);

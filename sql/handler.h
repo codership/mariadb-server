@@ -1033,13 +1033,8 @@ struct xid_recovery_member
   decltype(::server_id) server_id;         // server id of orginal server
 
 #ifdef WITH_WSREP
-  /* wsrep specific fields to reconstruct wsrep_xid for commit.
-     If wsrep_seqno is undefined, the transaction is not a wsrep transaction. */
-  wsrep::seqno wsrep_seqno;
-  wsrep::id wsrep_uuid;
-  uint32 wsrep_gtid_domain_id;
-  uint32 wsrep_gtid_server_id;
-  uint64 wsrep_gtid_seq_no;
+  /* Wsrep XID. Initialized if wsrep meta data is recovered during binlog recovery */
+  XID wsrep_xid;
 #endif /* WITH_WSREP */
 
   xid_recovery_member(my_xid xid_arg, uint prepare_arg, bool decided_arg,
@@ -1049,10 +1044,7 @@ struct xid_recovery_member
       binlog_coord(Binlog_offset(MAX_binlog_id, MAX_off_t)),
       full_xid(full_xid_arg), server_id(server_id_arg)
 #ifdef WITH_WSREP
-      ,
-      wsrep_seqno(wsrep::seqno::undefined()),
-      wsrep_uuid(wsrep::id::undefined()), wsrep_gtid_domain_id(0),
-      wsrep_gtid_server_id(0), wsrep_gtid_seq_no(0)
+    ,wsrep_xid{}
 #endif /* WITH_WSREP */
   {}
 };

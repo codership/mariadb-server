@@ -12276,11 +12276,12 @@ void Recovery_context::process_wsrep(xid_recovery_member *member,
 {
   if (member && xid_ev->wsrep_seqno != Xid_log_event::wsrep_seqno_undefined)
   {
-    member->wsrep_seqno= wsrep::seqno{xid_ev->wsrep_seqno};
-    member->wsrep_uuid= wsrep::id{xid_ev->wsrep_uuid, sizeof(member->wsrep_uuid)};
-    member->wsrep_gtid_domain_id= last_wsrep_gtid_domain_id;
-    member->wsrep_gtid_server_id= last_wsrep_gtid_server_id;
-    member->wsrep_gtid_seq_no= last_wsrep_gtid_seq_no;
+    wsrep_xid_init(&member->wsrep_xid,
+                   {wsrep::id{xid_ev->wsrep_uuid, sizeof(xid_ev->wsrep_uuid)},
+                    wsrep::seqno{xid_ev->wsrep_seqno}},
+                   {last_wsrep_gtid_domain_id,
+                      last_wsrep_gtid_server_id,
+                      last_wsrep_gtid_seq_no});
   }
 }
 #endif /* WITH_WSREP */
