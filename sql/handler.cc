@@ -2685,7 +2685,7 @@ static void xarecover_do_commit_or_rollback(transaction_participant *hton,
   if (xarecover_decide_to_commit(member, ptr_commit_max))
   {
 #ifdef WITH_WSREP
-    if (wsrep_is_wsrep_xid(member->wsrep_xid))
+    if (member->wsrep_xid && wsrep_is_wsrep_xid(member->wsrep_xid))
     {
       wsrep_recovery_commit_xid= member->wsrep_xid;
     }
