@@ -2751,19 +2751,39 @@ Xid_log_event(const uchar *buf,
   buf+= description_event->common_header_len +
     description_event->post_header_len[XID_EVENT-1];
   memcpy((char*) &xid, buf, sizeof(xid));
-  const uint len_with_wsrep= description_event->common_header_len +
-    description_event->post_header_len[XID_EVENT-1] +
-    sizeof(xid) + sizeof(wsrep_seqno) + sizeof(wsrep_uuid);
-  if (event_len == len_with_wsrep)
+
+  /*
+    Check if the event length is sufficient to read the wsrep
+    sequence number and uuid. Also check if the origin of the event is
+    MariaDB.
+  */
+  const uint event_len_with_seqno_and_uuid=
+      description_event->common_header_len +
+      description_event->post_header_len[XID_EVENT - 1] + sizeof(xid) +
+      sizeof(wsrep_seqno) + sizeof(wsrep_uuid);
+  if (event_len < event_len_with_seqno_and_uuid ||
+      description_event->server_version_split.kind !=
+      Format_description_log_event::master_version_split::KIND_MARIADB)
   {
-    buf += sizeof(xid);
-    wsrep_seqno= sint8korr(buf);
-    buf += sizeof(wsrep_seqno);
+    wsrep_seqno= wsrep_seqno_undefined;
+    memset(wsrep_uuid, 0, sizeof(wsrep_uuid));
+    return;
+  }
+
+  /*
+    Read the sequence number. If the sequence number belongs to range reserved
+    by wsrep, read the uuid as well.
+  */
+  buf += sizeof(xid);
+  wsrep_seqno= sint8korr(buf);
+
+  if (wsrep_seqno >= wsrep_seqno_undefined)
+  {
+    buf+= sizeof(wsrep_seqno);
     memcpy(wsrep_uuid, buf, sizeof(wsrep_uuid));
   }
   else
   {
-    wsrep_seqno= wsrep_seqno_undefined;
     memset(wsrep_uuid, 0, sizeof(wsrep_uuid));
   }
 }
