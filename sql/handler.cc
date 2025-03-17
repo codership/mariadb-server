@@ -2798,7 +2798,14 @@ static bool xarecover_handlerton(THD *, transaction_participant *hton, void *arg
     {
       sql_print_information("Found %d prepared transaction(s) in %s",
                             got, hton_name(hton)->str);
-      /* If wsrep_on=ON, XIDs are first ordered and then the range of
+      /*
+         Note: The following wsrep patch in this function is for
+         backwards compatibility only. Wsrep XIDs are not used for
+         2PC anymore since version 12.1. The wsrep specific behavior
+         can be removed once there is no need to support recovery from
+         pre-12.1 data directory.
+
+         If wsrep_on=ON, XIDs are first ordered and then the range of
          recovered XIDs is checked for continuity. All the XIDs which
          are in continuous range can be safely committed if binlog
          is off since they have already ordered and certified in the
