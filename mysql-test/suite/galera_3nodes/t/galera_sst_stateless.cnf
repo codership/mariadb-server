@@ -1,0 +1,7 @@
+!include ../galera_3nodes.cnf
+
+[mysqld.2]
+wsrep_provider_options="gcs.stateless=1"
+
+[mysqld.3]
+wsrep_sst_donor=node2,
