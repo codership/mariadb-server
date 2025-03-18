@@ -57,7 +57,9 @@ SET SESSION debug_sync = "now SIGNAL signal.wsrep_backup_stage_before_desync_and
 --source include/galera_wait_ready.inc
 
 --connection node_1_ctrl
+--disable_query_log
 --eval SET GLOBAL debug_dbug = "$orig_debug_dbug"
+--enable_query_log
 SET DEBUG_SYNC = "now SIGNAL after_prepare_continue";
 
 --connection node_1

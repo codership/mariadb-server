@@ -22,7 +22,6 @@ SET DEBUG_SYNC = "now WAIT_FOR after_prepare_reached";
 SET SESSION debug_sync = "now SIGNAL signal.wsrep_backup_stage_before_desync_and_pause";
 connection node_2;
 connection node_1_ctrl;
-SET GLOBAL debug_dbug = "";
 SET DEBUG_SYNC = "now SIGNAL after_prepare_continue";
 connection node_1;
 SET DEBUG_SYNC = RESET;
