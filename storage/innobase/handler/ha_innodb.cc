@@ -4751,14 +4751,6 @@ innobase_rollback(
     release it now before a possibly lengthy rollback */
     lock_unlock_table_autoinc(trx);
 
-#ifdef WITH_WSREP
-    /* If trx was assigned wsrep XID in prepare phase and the
-    trx is being rolled back due to BF abort, clear XID in order
-    to avoid writing it to rollback segment out of order. The XID
-    will be reassigned when the transaction is replayed. */
-    if (rollback_trx || wsrep_is_wsrep_xid(&trx->xid))
-      trx->xid.null();
-#endif /* WITH_WSREP */
     dberr_t error;
     if (rollback_trx)
     {
