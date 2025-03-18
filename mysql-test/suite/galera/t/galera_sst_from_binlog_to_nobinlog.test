@@ -9,6 +9,7 @@
 --source include/have_mariabackup.inc
 --source include/big_test.inc
 --source include/galera_cluster.inc
+--source include/have_debug_sync.inc
 
 --let $orig_debug_dbug = `SELECT @@GLOBAL.debug_dbug`
 --let $node_1 = node_1
