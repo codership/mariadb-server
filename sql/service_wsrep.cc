@@ -119,21 +119,6 @@ extern "C" long long wsrep_thd_trx_seqno(const THD *thd)
   }
 }
 
-extern "C" const unsigned char *wsrep_thd_trx_uuid(const MYSQL_THD thd)
-{
-  const wsrep::client_state &cs= thd->wsrep_cs();
-  if (cs.mode() == wsrep::client_state::m_toi)
-  {
-    return static_cast<const unsigned char *>(
-        cs.toi_meta().gtid().id().data());
-  }
-  else
-  {
-    return static_cast<const unsigned char *>(
-        cs.transaction().ws_meta().gtid().id().data());
-  }
-}
-
 extern "C" void wsrep_thd_self_abort(THD *thd)
 {
   thd->wsrep_cs().bf_abort(wsrep::seqno(0));

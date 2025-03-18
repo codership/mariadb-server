@@ -2074,8 +2074,8 @@ binlog_commit_flush_xid_caches(THD *thd, binlog_cache_mngr *cache_mngr,
 #ifdef WITH_WSREP
   if (WSREP(thd))
   {
-    end_evt.wsrep_seqno= wsrep_thd_trx_seqno(thd);
-    memcpy(end_evt.wsrep_uuid, wsrep_thd_trx_uuid(thd),
+    end_evt.wsrep_seqno= thd->wsrep_trx().ws_meta().gtid().seqno().get();
+    memcpy(end_evt.wsrep_uuid, thd->wsrep_trx().ws_meta().gtid().id().data(),
            sizeof(end_evt.wsrep_uuid));
   }
 #endif

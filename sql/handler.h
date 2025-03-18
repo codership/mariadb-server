@@ -44,10 +44,6 @@
 #include "mem_root_array.h"
 #include <utility>     // pair
 #include <my_attribute.h> /* __attribute__ */
-#ifdef WITH_WSREP
-#include "wsrep/id.hpp"
-#include "wsrep/seqno.hpp"
-#endif /* WITH_WSREP */
 
 class Alter_info;
 class Virtual_column_info;
