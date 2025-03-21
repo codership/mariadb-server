@@ -2752,7 +2752,6 @@ Xid_log_event(const uchar *buf,
     description_event->post_header_len[XID_EVENT-1];
   memcpy((char*) &xid, buf, sizeof(xid));
 
-#ifdef WITH_WSREP
   /*
     Check if the event length is sufficient to read the wsrep
     sequence number and uuid. Also check if the origin of the event is
@@ -2792,7 +2791,6 @@ Xid_log_event(const uchar *buf,
   {
     memset(wsrep_uuid, 0, sizeof(wsrep_uuid));
   }
-#endif /* WITH_WSREP */
 }
 
 /**************************************************************************

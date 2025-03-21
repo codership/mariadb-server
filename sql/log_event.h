@@ -2836,7 +2836,6 @@ class Xid_log_event: public Xid_apply_log_event
 {
 public:
   my_xid xid;
-#ifdef WITH_WSREP
   /* This matches the definition of WSREP_SEQNO_UNDEFINED and
      wsrep::seqno::undefined() */
   constexpr static int64 wsrep_seqno_undefined= -1;
@@ -2845,14 +2844,11 @@ public:
   int64 wsrep_seqno;
   /* Wsrep uuid, assigned along with wsrep seqno. */
   uchar wsrep_uuid[16];
-#endif /* WITH_WSREP */
 
 #ifdef MYSQL_SERVER
   Xid_log_event(THD* thd_arg, my_xid x, bool direct):
    Xid_apply_log_event(thd_arg), xid(x)
-#ifdef WITH_WSREP
    , wsrep_seqno(wsrep_seqno_undefined), wsrep_uuid()
-#endif /* WITH_WSREP */
    {
      if (direct)
        cache_type= Log_event::EVENT_NO_CACHE;
@@ -2875,11 +2871,7 @@ public:
   Log_event_type get_type_code() override { return XID_EVENT;}
   int get_data_size() override
   {
-#ifdef WITH_WSREP
     return sizeof(xid) + (wsrep_seqno != wsrep_seqno_undefined ? 8 + 16 : 0);
-#else
-    return sizeof(xid);
-#endif /* WITH_WSREP */
   }
 #ifdef MYSQL_SERVER
   bool write(Log_event_writer *writer) override;
