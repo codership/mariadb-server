@@ -2464,11 +2464,14 @@ bool Xid_log_event::print(FILE* file, PRINT_EVENT_INFO* print_event_info)
     char buf[64];
     longlong10_to_str(xid, buf, 10);
 
+#ifdef WITH_WSREP
     if (wsrep_seqno == wsrep_seqno_undefined)
     {
+#endif /* WITH_WSREP */
       if (print_header(&cache, print_event_info, FALSE) ||
           my_b_printf(&cache, "\tXid = %s\n", buf))
         goto err;
+#ifdef WITH_WSREP
     }
     else
     {
@@ -2482,6 +2485,7 @@ bool Xid_log_event::print(FILE* file, PRINT_EVENT_INFO* print_event_info)
                       buf, wsrep_seqno_buf, wsrep_uuid_buf))
         goto err;
     }
+#endif /* WITH_WSREP */
   }
   if (my_b_printf(&cache, is_flashback ? "START TRANSACTION%s\n" : "COMMIT%s\n",
                   print_event_info->delimiter))

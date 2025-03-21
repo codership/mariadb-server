@@ -2752,6 +2752,7 @@ Xid_log_event(const uchar *buf,
     description_event->post_header_len[XID_EVENT-1];
   memcpy((char*) &xid, buf, sizeof(xid));
 
+#ifdef WITH_WSREP
   /*
     Check if the event length is sufficient to read the wsrep
     sequence number and uuid. Also check if the origin of the event is
@@ -2760,7 +2761,12 @@ Xid_log_event(const uchar *buf,
   const uint event_len_with_seqno_and_uuid=
       description_event->common_header_len +
       description_event->post_header_len[XID_EVENT - 1] + sizeof(xid) +
-      sizeof(wsrep_seqno) + sizeof(wsrep_uuid);
+      8 + 16;
+  /*
+    If the event is too short to contain wsrep seqno and UUID or the
+    event was not created by MariaDB server, do not try to read wsrep
+    fields.
+  */
   if (event_len < event_len_with_seqno_and_uuid ||
       description_event->server_version_split.kind !=
       Format_description_log_event::master_version_split::KIND_MARIADB)
@@ -2779,13 +2785,14 @@ Xid_log_event(const uchar *buf,
 
   if (wsrep_seqno >= wsrep_seqno_undefined)
   {
-    buf+= sizeof(wsrep_seqno);
+    buf+= 8;
     memcpy(wsrep_uuid, buf, sizeof(wsrep_uuid));
   }
   else
   {
     memset(wsrep_uuid, 0, sizeof(wsrep_uuid));
   }
+#endif /* WITH_WSREP */
 }
 
 /**************************************************************************
