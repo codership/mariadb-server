@@ -5295,6 +5295,10 @@ public:
   bool                      wsrep_delayed_BF_abort;
   // true if this transaction is CREATE TABLE AS SELECT (CTAS)
   bool                      wsrep_ctas;
+
+  /* Store foreign key info list */
+  std::vector<List <FOREIGN_KEY_INFO>> m_wsrep_prepare_fk_list;
+
   /*
     Transaction id:
     * m_wsrep_next_trx_id is assigned on the first query after

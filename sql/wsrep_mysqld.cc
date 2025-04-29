@@ -3664,3 +3664,93 @@ bool wsrep_table_list_has_non_temp_tables(THD *thd, TABLE_LIST *tables)
   }
   return false;
 }
+
+bool wsrep_foreign_key_append(THD *thd)
+{
+  List <FOREIGN_KEY_INFO> fk_list;
+  FOREIGN_KEY_INFO *fk;
+  bool error= false;
+  int rcode= 0;
+
+  if (WSREP(thd) && !thd->wsrep_applier &&
+      wsrep_is_active(thd) &&
+      thd->wsrep_cs().state() == wsrep::client_state::s_exec &&
+      (sql_command_flags[thd->lex->sql_command] &
+       (CF_UPDATES_DATA | CF_DELETES_DATA)))
+  {
+    while (!thd->m_wsrep_prepare_fk_list.empty())
+    {
+      fk_list= thd->m_wsrep_prepare_fk_list.back();
+      List_iterator<FOREIGN_KEY_INFO> fk_list_it(fk_list);
+      while ((fk= fk_list_it++))
+      {
+        wsrep::key key(wsrep::key::shared);
+        key.append_key_part(fk->foreign_db->str, fk->foreign_db->length);
+        key.append_key_part(fk->foreign_table->str, fk->foreign_table->length);
+        rcode= thd->wsrep_cs().append_key(key);
+
+        if (rcode)
+        {
+          WSREP_ERROR("Appending table key failed: %s, %d",
+                      wsrep_thd_query(thd), rcode);
+          sql_print_information("Failed Foreign key referenced table found: "
+                                "%s.%s",
+                                fk->foreign_db->str,
+                                fk->foreign_table->str);
+          error= true;
+          break;
+        }
+
+        DBUG_EXECUTE_IF(
+          "wsrep_print_foreign_keys_table",
+          sql_print_information("Foreign key referenced table found: %s.%s",
+                                fk->foreign_db->str,
+                                fk->foreign_table->str);
+        );
+
+        try
+        {
+          thd->m_wsrep_prepare_fk_list.pop_back();
+        }
+        catch (...)
+        {
+          WSREP_ERROR("Removing prepared table key failed");
+          error= true;
+          break;
+        }
+      }
+    }
+  }
+
+  return error;
+}
+
+bool wsrep_foreign_key_prepare(THD *thd, TABLE_LIST *table_list)
+{
+  List <FOREIGN_KEY_INFO> fk_list;
+  bool error= false;
+
+  if (WSREP(thd) && !thd->wsrep_applier &&
+      wsrep_is_active(thd) &&
+      (sql_command_flags[thd->lex->sql_command] &
+       (CF_UPDATES_DATA | CF_DELETES_DATA)))
+  {
+    table_list->table->file->get_parent_foreign_key_list(thd, &fk_list);
+    if (unlikely(thd->is_error()))
+    {
+      return true;
+    }
+
+    try
+    {
+      thd->m_wsrep_prepare_fk_list.push_back(fk_list);
+    }
+    catch (...)
+    {
+      WSREP_ERROR("Appending table foreign key failed");
+      return true;
+    }
+  }
+
+  return error;
+}
