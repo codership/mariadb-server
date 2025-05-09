@@ -583,6 +583,26 @@ void wsrep_ready_set(bool ready_value);
  */
 bool wsrep_table_list_has_non_temp_tables(THD *thd, TABLE_LIST *tables);
 
+/**
+ * Prepare key list from table_list and save it to be appended
+ * later.
+ *
+ * @param thd           Thread object
+ * @param table_list    Table List
+ *
+ * @return true if error, otherwise false.
+ */
+bool wsrep_foreign_key_prepare(THD *thd, TABLE_LIST *table_list);
+
+/**
+ * Append saved key list to Wsrep.
+ *
+ * @param thd           Thread object
+ *
+ * @return true if error, otherwise false.
+ */
+bool wsrep_foreign_key_append(THD *thd);
+
 #else /* !WITH_WSREP */
 
 /* These macros are needed to compile MariaDB without WSREP support

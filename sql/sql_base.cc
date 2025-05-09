@@ -4410,6 +4410,27 @@ restart:
       DEBUG_SYNC(thd, "open_tables_after_open_and_process_table");
     }
 
+#ifdef WITH_WSREP
+    /*
+      Append a table level shared key for the referenced/foreign table for:
+        - statement that updates existing rows (UPDATE, multi-update)
+        - statement that deletes existing rows (DELETE, DELETE_MULTI)
+      This is done to avoid potential MDL conflicts with concurrent DDLs.
+
+      The table level shared key are not appended if the wsrep client state is
+      not s_exec, as in the case during statement prepare it perform semantic
+      analysis of the parsed tree and send a response packet to the client.
+      While doing sematic analysis it opens all required tables to check access
+      rights. These operations to test prepared statements does not require to
+      append table level shared key, they will be added later.
+    */
+    if (wsrep_foreign_key_append(thd))
+    {
+      error= TRUE;
+      goto error;
+    }
+#endif // WITH_WSREP
+
     /*
       If we are not already in prelocked mode and extended table list is
       not yet built for our statement we need to cache routines it uses
@@ -4718,6 +4739,7 @@ prepare_fk_prelocking_list(THD *thd, Query_tables_list *prelocking_ctx,
   FOREIGN_KEY_INFO *fk;
   Query_arena *arena, backup;
   TABLE *table= table_list->table;
+  bool error= FALSE;
 
   arena= thd->activate_stmt_arena_if_needed(&backup);
 
@@ -4755,10 +4777,25 @@ prepare_fk_prelocking_list(THD *thd, Query_tables_list *prelocking_ctx,
         table_list->belong_to_view, op,
         &prelocking_ctx->query_tables_last,
         table_list->for_insert_data);
+
+#ifdef WITH_WSREP
+    /*
+      Prepare a table level shared key for the referenced/foreign table to
+      be appended later for:
+        - statement that updates existing rows (UPDATE, multi-update)
+        - statement that deletes existing rows (DELETE, DELETE_MULTI)
+      This is done to avoid potential MDL conflicts with concurrent DDLs.
+    */
+    if (wsrep_foreign_key_prepare(thd, table_list))
+    {
+      error= TRUE;
+      break;
+    }
+#endif // WITH_WSREP
   }
   if (arena)
     thd->restore_active_arena(arena, &backup);
-  DBUG_RETURN(FALSE);
+  DBUG_RETURN(error);
 }
 
 /**

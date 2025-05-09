@@ -1553,6 +1553,7 @@ void THD::cleanup(void)
   if (wsrep_cs().state() != wsrep::client_state::s_none)
     wsrep_cs().cleanup();
   wsrep_client_thread= false;
+  m_wsrep_prepare_fk_list.clear();
 #endif /* WITH_WSREP */
 
   DEBUG_SYNC(this, "THD_cleanup_after_set_killed");
@@ -1727,6 +1728,7 @@ THD::~THD()
     free_connection();
 
 #ifdef WITH_WSREP
+  m_wsrep_prepare_fk_list.clear();
   mysql_cond_destroy(&COND_wsrep_thd);
   my_free(wsrep_abort_by_kill_err);
   wsrep_abort_by_kill_err= 0;
