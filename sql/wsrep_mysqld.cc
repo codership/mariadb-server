@@ -899,7 +899,7 @@ int wsrep_init()
   Wsrep_server_state::init_provider_services();
   if (Wsrep_server_state::instance().load_provider(
           wsrep_provider,
-          [&](wsrep::provider_options &opts) {
+          [&](const wsrep::provider_options &opts) {
             std::string defaults(wsrep_provider_options);
             if (wsrep_load_provider_plugin_defaults(opts, defaults))
             {

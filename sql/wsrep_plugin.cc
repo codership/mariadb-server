@@ -325,7 +325,7 @@ static void make_my_options(std::vector<struct my_option_arg> &my_args,
   my_options.push_back(null_opt);
 }
 
-static void make_my_option_args(wsrep::provider_options &options,
+static void make_my_option_args(const wsrep::provider_options &options,
                                 std::string &defaults,
                                 std::vector<struct my_option_arg> &my_args)
 {
@@ -346,7 +346,7 @@ static my_bool option_changed(const struct my_option *opt, const char *value,
   return 0;
 }
 
-int wsrep_load_provider_plugin_defaults(wsrep::provider_options &options,
+int wsrep_load_provider_plugin_defaults(const wsrep::provider_options &options,
                                         std::string &extra_options)
 {
   int argc= orig_argc;
