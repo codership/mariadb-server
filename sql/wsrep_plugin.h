@@ -36,7 +36,7 @@ void wsrep_destroy_sysvar(struct st_mysql_sys_var *);
 
 /* Parse defaults from config/command line, returns corresponding
    provider options string */
-int wsrep_load_provider_plugin_defaults(wsrep::provider_options &,
+int wsrep_load_provider_plugin_defaults(const wsrep::provider_options &,
                                         std::string &);
 
 #endif /* WSREP_PLUGIN_H */
