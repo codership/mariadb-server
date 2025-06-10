@@ -1,0 +1,5 @@
+[warnigs]
+log-warnings=2
+
+[wsrep-mode]
+wsrep-mode=APPLIER_LOG_WARNINGS
