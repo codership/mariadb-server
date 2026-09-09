@@ -711,10 +711,15 @@ else # joiner
         SILENT=""
     fi
 
+# uid/gid keep rsync from dropping to nobody:nogroup when run as root,
+# which otherwise can't write into the root-owned datadir. No-op
+# when the daemon is not started by root.
 cat << EOF > "$RSYNC_CONF"
 pid file = $RSYNC_PID
 use chroot = no
 read only = no
+uid = 0
+gid = 0
 timeout = 300
 $SILENT
 [$MODULE]
